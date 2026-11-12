@@ -1,0 +1,23 @@
+# Dependencias y artefactos de compilación
+node_modules/
+dist/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Variables de entorno: nunca se suben (se versiona solo .env.example)
+.env
+.env.*
+!.env.example
+
+# Base local embebida, logs y reportes de pruebas
+.pgdata/
+logs/
+test-results/
+playwright-report/
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
