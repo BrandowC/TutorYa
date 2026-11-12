@@ -1,0 +1,13 @@
+node_modules
+/dist
+*.tsbuildinfo
+coverage
+
+# Variables de entorno: nunca se suben al repositorio
+.env
+
+# Base local embebida y logs de ejecución
+/.pgdata
+/logs
+
+/src/generated/prisma
