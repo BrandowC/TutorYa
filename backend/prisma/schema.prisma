@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Rol {
+  ESTUDIANTE
+  TUTOR
+}
+
+enum EstadoSesion {
+  SOLICITADA
+  CONFIRMADA
+  RECHAZADA
+  CANCELADA
+  REALIZADA
+  NO_ASISTIO
+}
+
+model Usuario {
+  id           String   @id @default(uuid())
+  nombres      String   @db.VarChar(100)
+  correo       String   @unique @db.VarChar(150)
+  programa     String   @db.VarChar(100)
+  rol          Rol
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  disponibilidades Disponibilidad[]
+  sesionesComoTutor      Sesion[] @relation("SesionTutor")
+  sesionesComoEstudiante Sesion[] @relation("SesionEstudiante")
+  calificaciones   Calificacion[]
+
+  @@map("usuarios")
+}
+
+model Asignatura {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique @db.VarChar(100)
+  activa Boolean @default(true)
+
+  disponibilidades Disponibilidad[]
+  sesiones         Sesion[]
+
+  @@map("asignaturas")
+}
+
+model Disponibilidad {
+  id           String   @id @default(uuid())
+  tutorId      String   @map("tutor_id")
+  asignaturaId Int      @map("asignatura_id")
+  inicio       DateTime @db.Timestamptz(6)
+  fin          DateTime @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tutor      Usuario    @relation(fields: [tutorId], references: [id])
+  asignatura Asignatura @relation(fields: [asignaturaId], references: [id])
+  sesiones   Sesion[]
+
+  @@index([tutorId, inicio])
+  @@index([asignaturaId, inicio])
+  @@map("disponibilidades")
+}
+
+model Sesion {
+  id                  String       @id @default(uuid())
+  disponibilidadId    String       @map("disponibilidad_id")
+  tutorId             String       @map("tutor_id")
+  estudianteId        String       @map("estudiante_id")
+  asignaturaId        Int          @map("asignatura_id")
+  inicio              DateTime     @db.Timestamptz(6)
+  fin                 DateTime     @db.Timestamptz(6)
+  estado              EstadoSesion @default(SOLICITADA)
+  motivoCancelacion   String?      @map("motivo_cancelacion") @db.VarChar(300)
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  disponibilidad Disponibilidad @relation(fields: [disponibilidadId], references: [id])
+  tutor          Usuario        @relation("SesionTutor", fields: [tutorId], references: [id])
+  estudiante     Usuario        @relation("SesionEstudiante", fields: [estudianteId], references: [id])
+  asignatura     Asignatura     @relation(fields: [asignaturaId], references: [id])
+  calificacion   Calificacion?
+
+  @@index([tutorId, estado])
+  @@index([estudianteId, estado])
+  @@index([disponibilidadId])
+  @@map("sesiones")
+}
+
+model Calificacion {
+  id           String   @id @default(uuid())
+  sesionId     String   @unique @map("sesion_id")
+  estudianteId String   @map("estudiante_id")
+  puntaje      Int
+  comentario   String?  @db.VarChar(300)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  sesion     Sesion  @relation(fields: [sesionId], references: [id])
+  estudiante Usuario @relation(fields: [estudianteId], references: [id])
+
+  @@map("calificaciones")
+}
