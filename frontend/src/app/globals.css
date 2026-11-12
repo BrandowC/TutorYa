@@ -1,0 +1,428 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+}
+
+/* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
+These serve as the fallback; there is no separate default.css file. */
+/*
+ * Identidad de marca TutorApp
+ *   Primario  #3D4BFF  azul eléctrico   (acciones, enlaces, foco)
+ *   Secundario #FF7A1A naranja vivo      (acentos, indicadores, logo)
+ *   Acento    #00C2A8  turquesa          (éxito, estados positivos)
+ *   Tinta     #0F1538  azul noche        (texto y menú lateral)
+ */
+:root {
+  --radius: 0.875rem;
+  --background: #f5f6ff;
+  --foreground: #0f1538;
+  --card: #ffffff;
+  --card-foreground: #0f1538;
+  --popover: #ffffff;
+  --popover-foreground: #0f1538;
+  --primary: #3d4bff;
+  --primary-foreground: #ffffff;
+  --secondary: #ffefe0;
+  --secondary-foreground: #9a3f00;
+  --muted: #eceeff;
+  --muted-foreground: #5b628f;
+  --accent: #e5e8ff;
+  --accent-foreground: #1d2480;
+  --destructive: #e5314b;
+  --border: #dde0f5;
+  --input: #cfd3f0;
+  --ring: #3d4bff;
+  --chart-1: #3d4bff;
+  --chart-2: #ff7a1a;
+  --chart-3: #00c2a8;
+  --chart-4: #a855f7;
+  --chart-5: #f43f5e;
+  --sidebar: #0f1538;
+  --sidebar-foreground: #e8ebff;
+  --sidebar-primary: #ff7a1a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(255 255 255 / 9%);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 10%);
+  --sidebar-ring: #ff7a1a;
+  --success: #00967f;
+  --success-soft: #d9f8f2;
+  --warning-soft: #fff0dc;
+
+  /* fonts */
+  --font-sans: var(--font-outfit);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #0a0e27;
+  --foreground: #eef0ff;
+  --card: #131a45;
+  --card-foreground: #eef0ff;
+  --popover: #131a45;
+  --popover-foreground: #eef0ff;
+  --primary: #7c88ff;
+  --primary-foreground: #0a0e27;
+  --secondary: #3a2412;
+  --secondary-foreground: #ffb27a;
+  --muted: #1b2357;
+  --muted-foreground: #a3abdb;
+  --accent: #222c6b;
+  --accent-foreground: #dfe3ff;
+  --destructive: #ff6b81;
+  --border: rgb(255 255 255 / 11%);
+  --input: rgb(255 255 255 / 16%);
+  --ring: #7c88ff;
+  --chart-1: #7c88ff;
+  --chart-2: #ff9a4d;
+  --chart-3: #2de0c4;
+  --chart-4: #c084fc;
+  --chart-5: #fb7185;
+  --sidebar: #070a1d;
+  --sidebar-foreground: #e8ebff;
+  --sidebar-primary: #ff7a1a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(255 255 255 / 9%);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 10%);
+  --sidebar-ring: #ff7a1a;
+  --success: #2de0c4;
+  --success-soft: #0f3a3a;
+  --warning-soft: #3a2412;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    /* Las variables de next/font viven en <body>, por eso la fuente se enlaza aquí. */
+    --font-sans: var(--font-outfit);
+    --font-mono: var(--font-geist-mono);
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-2xs {
+    box-shadow: var(--shadow-2xs);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-xs {
+    box-shadow: var(--shadow-xs);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-sm {
+    box-shadow: var(--shadow-sm);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow {
+    box-shadow: var(--shadow);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-md {
+    box-shadow: var(--shadow-md);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-lg {
+    box-shadow: var(--shadow-lg);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-xl {
+    box-shadow: var(--shadow-xl);
+  }
+
+  [data-theme-preset]:not([data-theme-preset="default"]) .shadow-2xl {
+    box-shadow: var(--shadow-2xl);
+  }
+}
+
+html {
+  overscroll-behavior-x: auto;
+  overscroll-behavior-y: none;
+}
+
+html:has([data-landing-page]) {
+  view-transition-name: none;
+}
+
+[data-landing-dashboard-preview] {
+  view-transition-name: landing-dashboard-preview;
+}
+
+::view-transition-group(landing-dashboard-preview) {
+  animation-duration: 360ms;
+  animation-timing-function: ease-out;
+}
+
+.disable-transitions * {
+  transition: none !important;
+}
+
+[data-print-root] {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: Letter;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 8.5in !important;
+    height: 11in !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body > *:not([data-print-root]) {
+    display: none !important;
+  }
+
+  [data-print-root] {
+    display: block !important;
+    width: 8.5in !important;
+    height: 11in !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    background: white !important;
+  }
+
+  [data-print-root] [data-print-paper] {
+    width: 8.5in !important;
+    height: 11in !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [data-print-root] [data-print-paper],
+  [data-print-root] [data-print-paper] * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ---------- Logo 3D de TutorApp (CSS 3D) ---------- */
+.logo3d-escena {
+  --t: 220px;
+  position: relative;
+  width: var(--t);
+  height: calc(var(--t) * 1.12);
+  perspective: 900px;
+  touch-action: none;
+}
+
+.logo3d-cubo {
+  --rx: 0deg;
+  --ry: 0deg;
+  position: absolute;
+  inset: 0 0 12% 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: logo3d-flotar 6s ease-in-out infinite;
+}
+
+.logo3d-cubo[data-activo="true"] {
+  animation: none;
+  transition-duration: 0.08s;
+}
+
+.logo3d-capa,
+.logo3d-frente {
+  position: absolute;
+  inset: 0;
+  border-radius: 29%;
+}
+
+.logo3d-capa {
+  background: linear-gradient(180deg, #2a35d8 0%, #121a7c 100%);
+}
+
+.logo3d-frente {
+  background: linear-gradient(180deg, #7684ff 0%, #3d4bff 52%, #1a22a8 100%);
+  transform-style: preserve-3d;
+  box-shadow:
+    inset 0 -10px 26px rgb(10 14 60 / 0.45),
+    inset 0 3px 8px rgb(255 255 255 / 0.35);
+}
+
+.logo3d-brillo {
+  position: absolute;
+  inset: 3% 4% 52% 4%;
+  border-radius: 40% 40% 60% 60% / 55% 55% 45% 45%;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0));
+  pointer-events: none;
+}
+
+.logo3d-letra {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--t) * 0.62);
+  line-height: 1;
+  user-select: none;
+}
+
+.logo3d-esfera {
+  position: absolute;
+  top: -12%;
+  right: -12%;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #ffd8b0 0%, #ff7a1a 46%, #c24a00 100%);
+  transform: translateZ(46px);
+  box-shadow: 0 14px 22px rgb(255 122 26 / 0.45);
+  animation: logo3d-esfera 3.2s ease-in-out infinite;
+}
+
+.logo3d-esfera-brillo {
+  position: absolute;
+  top: 16%;
+  left: 20%;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.9);
+}
+
+.logo3d-sombra {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 0;
+  height: 9%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgb(15 21 56 / 0.35), transparent 70%);
+  filter: blur(6px);
+  animation: logo3d-sombra 6s ease-in-out infinite;
+}
+
+@keyframes logo3d-flotar {
+  0%,
+  100% {
+    transform: rotateX(8deg) rotateY(-16deg) translateY(0);
+  }
+  50% {
+    transform: rotateX(-4deg) rotateY(14deg) translateY(-10px);
+  }
+}
+
+@keyframes logo3d-esfera {
+  0%,
+  100% {
+    transform: translateZ(46px) translateY(0);
+  }
+  50% {
+    transform: translateZ(60px) translateY(-8px);
+  }
+}
+
+@keyframes logo3d-sombra {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scaleX(0.82);
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo3d-cubo,
+  .logo3d-esfera,
+  .logo3d-sombra {
+    animation: none;
+  }
+  .logo3d-cubo {
+    transform: rotateX(6deg) rotateY(-14deg);
+  }
+}
+
+/* Fondo animado del panel de bienvenida */
+.fondo-marca {
+  background:
+    radial-gradient(60rem 30rem at 10% -10%, rgb(255 122 26 / 0.35), transparent 60%),
+    radial-gradient(50rem 32rem at 100% 10%, rgb(0 194 168 / 0.28), transparent 55%),
+    linear-gradient(160deg, #3d4bff 0%, #2230d6 45%, #0f1538 100%);
+}
+
+.burbuja {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(2px);
+  animation: burbuja 14s ease-in-out infinite;
+}
+
+@keyframes burbuja {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(14px, -26px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .burbuja {
+    animation: none;
+  }
+}
