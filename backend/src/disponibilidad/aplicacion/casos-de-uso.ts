@@ -69,6 +69,41 @@ export class RegistrarDisponibilidad {
   }
 }
 
+/** SWR-DISP-002: gestión de bloques propios sin sesiones activas. */
+export class GestionarDisponibilidad {
+  constructor(
+    private readonly disponibilidades: DisponibilidadRepositorio,
+    private readonly asignaturas: AsignaturaRepositorio,
+    private readonly reloj: Reloj,
+    private readonly politica: PoliticaDeTiempo,
+    private readonly registro: Registro,
+  ) {}
+
+  async editar(actor: Actor, id: string, datos: DatosDisponibilidad): Promise<Disponibilidad> {
+    exigirRol(actor, 'TUTOR');
+    validarBloque(datos, this.reloj.ahora(), this.politica);
+    const asignatura = await this.asignaturas.buscarPorId(datos.asignaturaId);
+    if (!asignatura?.activa) {
+      throw errorDeValidacion('ASIGNATURA_INVALIDA', 'La asignatura seleccionada no existe o no está activa.');
+    }
+    const actualizada = await this.disponibilidades.actualizar(id, { tutorId: actor.id, ...datos });
+    this.registro.info(CONTEXTO, 'AVAILABILITY_UPDATED', 'Disponibilidad modificada', {
+      availabilityId: id,
+      userId: actor.id,
+    });
+    return actualizada;
+  }
+
+  async retirar(actor: Actor, id: string): Promise<void> {
+    exigirRol(actor, 'TUTOR');
+    await this.disponibilidades.retirar(id, actor.id, this.reloj.ahora());
+    this.registro.info(CONTEXTO, 'AVAILABILITY_WITHDRAWN', 'Disponibilidad retirada', {
+      availabilityId: id,
+      userId: actor.id,
+    });
+  }
+}
+
 export class ListarMisDisponibilidades {
   constructor(private readonly disponibilidades: DisponibilidadRepositorio) {}
 

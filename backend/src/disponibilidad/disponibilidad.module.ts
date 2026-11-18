@@ -8,6 +8,7 @@ import { AsignaturaRepositorio } from '../catalogo/aplicacion/puertos.js';
 import { CatalogoModule } from '../catalogo/catalogo.module.js';
 import {
   BuscarTutoresDisponibles,
+  GestionarDisponibilidad,
   ListarMisDisponibilidades,
   RegistrarDisponibilidad,
 } from './aplicacion/casos-de-uso.js';
@@ -26,6 +27,12 @@ import {
       provide: RegistrarDisponibilidad,
       useFactory: (d: DisponibilidadRepositorio, a: AsignaturaRepositorio, r: Reloj, p: PoliticaDeTiempo, l: Registro) =>
         new RegistrarDisponibilidad(d, a, r, p, l),
+      inject: [DisponibilidadRepositorio, AsignaturaRepositorio, Reloj, POLITICA_TIEMPO, Registro],
+    },
+    {
+      provide: GestionarDisponibilidad,
+      useFactory: (d: DisponibilidadRepositorio, a: AsignaturaRepositorio, r: Reloj, p: PoliticaDeTiempo, l: Registro) =>
+        new GestionarDisponibilidad(d, a, r, p, l),
       inject: [DisponibilidadRepositorio, AsignaturaRepositorio, Reloj, POLITICA_TIEMPO, Registro],
     },
     {

@@ -15,6 +15,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Spinner } from "@/components/ui/spinner";
 import { useConsulta } from "@/hooks/use-consulta";
 import { api } from "@/lib/api/cliente";
+import type { HorarioLibre } from "@/lib/api/tipos";
 import { aIsoColombia, formatearRango, iniciales } from "@/lib/formato";
 
 import { EstadoCargando, EstadoError, EstadoVacio } from "./estados-consulta";
@@ -36,12 +37,12 @@ export function BuscarTutoresPanel() {
     clave,
   );
 
-  async function solicitar(disponibilidadId: string) {
+  async function solicitar(horario: HorarioLibre) {
     if (solicitando) return; // evita el doble clic
-    setSolicitando(disponibilidadId);
+    setSolicitando(horario.disponibilidadId);
     setErrorSolicitud(null);
     try {
-      await api.solicitarSesion(disponibilidadId);
+      await api.solicitarSesion(horario);
       toast.success("Sesión solicitada. El tutor la confirmará pronto.");
     } catch (error) {
       setErrorSolicitud(error instanceof Error ? error.message : "No se pudo solicitar la sesión.");
@@ -122,7 +123,7 @@ export function BuscarTutoresPanel() {
                     <Button
                       className="mt-auto h-9"
                       disabled={solicitando !== null}
-                      onClick={() => solicitar(horario.disponibilidadId)}
+                      onClick={() => solicitar(horario)}
                       aria-label={`Solicitar sesión de ${horario.asignatura.nombre} con ${horario.tutor.nombres}`}
                     >
                       {solicitando === horario.disponibilidadId ? <Spinner /> : <CalendarCheck2 />}

@@ -11,13 +11,23 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import { useConsulta } from "@/hooks/use-consulta";
 import { api } from "@/lib/api/cliente";
-import { aIsoColombia, formatearRango, sumarMinutos } from "@/lib/formato";
+import type { DisponibilidadDetalle } from "@/lib/api/tipos";
+import { aIsoColombia, fechaHoraColombia, formatearRango, sumarMinutos } from "@/lib/formato";
 import { type DatosDisponibilidadFormulario, DURACIONES_MINUTOS, esquemaDisponibilidad } from "@/lib/validaciones";
 
 import { EstadoCargando, EstadoError, EstadoVacio } from "./estados-consulta";
@@ -25,6 +35,10 @@ import { EstadoCargando, EstadoError, EstadoVacio } from "./estados-consulta";
 export function DisponibilidadPanel() {
   const asignaturas = useConsulta(() => api.listarAsignaturas());
   const disponibilidades = useConsulta(() => api.misDisponibilidades());
+  const [horarioEditado, setHorarioEditado] = useState<DisponibilidadDetalle | null>(null);
+  const [horarioRetirado, setHorarioRetirado] = useState<DisponibilidadDetalle | null>(null);
+  const [errorRetiro, setErrorRetiro] = useState<string | null>(null);
+  const [retirando, setRetirando] = useState(false);
   const [errorApi, setErrorApi] = useState<string | null>(null);
 
   const form = useForm<DatosDisponibilidadFormulario>({
@@ -32,21 +46,72 @@ export function DisponibilidadPanel() {
     defaultValues: { asignaturaId: "", fecha: "", hora: "", duracion: "60" },
   });
   const { isSubmitting } = form.formState;
+  const etiquetaGuardar = horarioEditado ? "Guardar cambios" : "Publicar horario";
 
-  async function publicar(datos: DatosDisponibilidadFormulario) {
+  const duracionOriginal = horarioEditado
+    ? (Date.parse(horarioEditado.fin) - Date.parse(horarioEditado.inicio)) / 60_000
+    : 60;
+  const duraciones: number[] = [...new Set<number>([...DURACIONES_MINUTOS, duracionOriginal])].sort((a, b) => a - b);
+
+  function editar(horario: DisponibilidadDetalle) {
     setErrorApi(null);
-    const inicio = aIsoColombia(datos.fecha, datos.hora);
+    setHorarioEditado(horario);
+    form.reset({
+      asignaturaId: String(horario.asignatura.id),
+      ...fechaHoraColombia(horario.inicio),
+      duracion: String((Date.parse(horario.fin) - Date.parse(horario.inicio)) / 60_000),
+    });
+    form.setFocus("fecha");
+  }
+
+  function cerrarEdicion() {
+    setHorarioEditado(null);
+    setErrorApi(null);
+    form.reset();
+  }
+
+  async function guardar(datos: DatosDisponibilidadFormulario) {
+    setErrorApi(null);
     try {
-      await api.crearDisponibilidad({
+      const original = horarioEditado && fechaHoraColombia(horarioEditado.inicio);
+      const inicio =
+        horarioEditado && original && original.fecha === datos.fecha && original.hora === datos.hora
+          ? horarioEditado.inicio
+          : aIsoColombia(datos.fecha, datos.hora);
+      const bloque = {
         asignaturaId: Number(datos.asignaturaId),
         inicio,
         fin: sumarMinutos(inicio, Number(datos.duracion)),
-      });
-      toast.success("Horario publicado. Los estudiantes ya pueden reservarlo.");
-      form.reset({ ...form.getValues(), fecha: "", hora: "" });
+      };
+      if (horarioEditado) {
+        await api.editarDisponibilidad(horarioEditado.id, bloque);
+        cerrarEdicion();
+        toast.success("Horario actualizado.");
+      } else {
+        await api.crearDisponibilidad(bloque);
+        toast.success("Horario publicado. Los estudiantes ya pueden reservarlo.");
+        form.reset({ ...form.getValues(), fecha: "", hora: "" });
+      }
       disponibilidades.recargar();
     } catch (error) {
-      setErrorApi(error instanceof Error ? error.message : "No se pudo publicar el horario.");
+      setErrorApi(error instanceof Error ? error.message : "No se pudo guardar el horario.");
+    }
+  }
+
+  async function retirar() {
+    if (!horarioRetirado || retirando) return;
+    setRetirando(true);
+    setErrorRetiro(null);
+    try {
+      await api.retirarDisponibilidad(horarioRetirado.id);
+      if (horarioEditado?.id === horarioRetirado.id) cerrarEdicion();
+      setHorarioRetirado(null);
+      disponibilidades.recargar();
+      toast.success("Horario retirado.");
+    } catch (error) {
+      setErrorRetiro(error instanceof Error ? error.message : "No se pudo retirar el horario.");
+    } finally {
+      setRetirando(false);
     }
   }
 
@@ -55,12 +120,12 @@ export function DisponibilidadPanel() {
       <Card className="h-fit">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CalendarPlus className="text-primary size-5" /> Nuevo horario
+            <CalendarPlus className="text-primary size-5" /> {horarioEditado ? "Editar horario" : "Nuevo horario"}
           </CardTitle>
           <CardDescription>Elige la asignatura, el día y la hora. Las horas son de Colombia.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form noValidate onSubmit={form.handleSubmit(publicar)} className="flex flex-col gap-4">
+          <form noValidate onSubmit={form.handleSubmit(guardar)} className="flex flex-col gap-4">
             {errorApi && (
               <Alert variant="destructive" role="alert">
                 <CircleAlert />
@@ -123,7 +188,7 @@ export function DisponibilidadPanel() {
                   <Field className="gap-1.5">
                     <FieldLabel htmlFor="disp-duracion">Duración</FieldLabel>
                     <NativeSelect {...field} id="disp-duracion" className="w-full">
-                      {DURACIONES_MINUTOS.map((minutos) => (
+                      {duraciones.map((minutos) => (
                         <NativeSelectOption key={minutos} value={String(minutos)}>
                           {minutos} minutos
                         </NativeSelectOption>
@@ -135,8 +200,13 @@ export function DisponibilidadPanel() {
             </FieldGroup>
             <Button type="submit" size="lg" className="h-10" disabled={isSubmitting}>
               {isSubmitting ? <Spinner /> : <CalendarPlus />}
-              {isSubmitting ? "Publicando…" : "Publicar horario"}
+              {isSubmitting ? "Guardando…" : etiquetaGuardar}
             </Button>
+            {horarioEditado && (
+              <Button type="button" variant="outline" onClick={cerrarEdicion} disabled={isSubmitting}>
+                Cancelar edición
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -169,9 +239,62 @@ export function DisponibilidadPanel() {
                         <Lock className="size-3" /> Reservado
                       </Badge>
                     ) : (
-                      <Badge className="border-transparent bg-[#d9f8f2] font-semibold text-[#00695a] dark:bg-[#0f3a3a] dark:text-[#2de0c4]">
-                        Libre
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className="border-transparent bg-[#d9f8f2] font-semibold text-[#00695a] dark:bg-[#0f3a3a] dark:text-[#2de0c4]">
+                          Libre
+                        </Badge>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => editar(d)}
+                          disabled={isSubmitting || retirando}
+                        >
+                          Editar
+                        </Button>
+                        <Dialog
+                          open={horarioRetirado?.id === d.id}
+                          onOpenChange={(abierto) => {
+                            if (retirando) return;
+                            setHorarioRetirado(abierto ? d : null);
+                            setErrorRetiro(null);
+                          }}
+                        >
+                          <DialogTrigger asChild>
+                            <Button type="button" variant="outline" size="sm" disabled={isSubmitting || retirando}>
+                              Retirar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent showCloseButton={false}>
+                            <DialogHeader>
+                              <DialogTitle>Retirar horario</DialogTitle>
+                              <DialogDescription>
+                                El horario de {d.asignatura.nombre} ({formatearRango(d.inicio, d.fin)}) dejará de
+                                aparecer en la búsqueda de los estudiantes.
+                              </DialogDescription>
+                            </DialogHeader>
+                            {errorRetiro && (
+                              <Alert variant="destructive" role="alert">
+                                <CircleAlert />
+                                <AlertDescription>{errorRetiro}</AlertDescription>
+                              </Alert>
+                            )}
+                            <DialogFooter>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={retirando}
+                                onClick={() => setHorarioRetirado(null)}
+                              >
+                                Volver
+                              </Button>
+                              <Button type="button" variant="destructive" onClick={retirar} disabled={retirando}>
+                                {retirando ? "Retirando…" : "Retirar horario"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
