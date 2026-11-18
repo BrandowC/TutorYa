@@ -57,6 +57,8 @@ model Disponibilidad {
   fin          DateTime @db.Timestamptz(6)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
+  retiradaEn   DateTime? @map("retirada_en") @db.Timestamptz(6)
+
   tutor      Usuario    @relation(fields: [tutorId], references: [id])
   asignatura Asignatura @relation(fields: [asignaturaId], references: [id])
   sesiones   Sesion[]

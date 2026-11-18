@@ -91,6 +91,9 @@ export const api = {
 
   crearDisponibilidad: (datos: { asignaturaId: number; inicio: string; fin: string }) =>
     solicitar<{ id: string }>("/disponibilidades", { method: "POST", ...json(datos) }),
+  editarDisponibilidad: (id: string, datos: { asignaturaId: number; inicio: string; fin: string }) =>
+    solicitar<{ id: string }>(`/disponibilidades/${id}`, { method: "PATCH", ...json(datos) }),
+  retirarDisponibilidad: (id: string) => solicitar<void>(`/disponibilidades/${id}`, { method: "DELETE" }),
   misDisponibilidades: () => solicitar<DisponibilidadDetalle[]>("/disponibilidades/mias"),
 
   buscarTutores: (filtro: { asignaturaId?: number; desde?: string; hasta?: string }) => {
@@ -102,8 +105,11 @@ export const api = {
     return solicitar<HorarioLibre[]>(`/tutores/disponibles${consulta ? `?${consulta}` : ""}`);
   },
 
-  solicitarSesion: (disponibilidadId: string) =>
-    solicitar<{ id: string }>("/sesiones", { method: "POST", ...json({ disponibilidadId }) }),
+  solicitarSesion: ({ disponibilidadId, asignatura, inicio, fin }: HorarioLibre) =>
+    solicitar<{ id: string }>("/sesiones", {
+      method: "POST",
+      ...json({ disponibilidadId, horarioOfrecido: { asignaturaId: asignatura.id, inicio, fin } }),
+    }),
   misSesiones: (estado?: EstadoSesion) =>
     solicitar<SesionDetalle[]>(`/sesiones/mias${estado ? `?estado=${estado}` : ""}`),
   resumen: () => solicitar<ResumenUsuario>("/sesiones/resumen"),

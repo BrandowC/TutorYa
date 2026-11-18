@@ -44,6 +44,12 @@ export function aIsoColombia(fecha: string, hora: string): string {
   return new Date(`${fecha}T${hora}:00-05:00`).toISOString();
 }
 
+/** Valores de fecha y hora local para los controles del formulario. */
+export function fechaHoraColombia(iso: string): { fecha: string; hora: string } {
+  const fechaLocal = new Date(new Date(iso).getTime() - 5 * 60 * 60_000).toISOString();
+  return { fecha: fechaLocal.slice(0, 10), hora: fechaLocal.slice(11, 16) };
+}
+
 export function sumarMinutos(iso: string, minutos: number): string {
   return new Date(new Date(iso).getTime() + minutos * 60_000).toISOString();
 }

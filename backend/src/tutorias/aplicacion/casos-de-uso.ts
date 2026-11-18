@@ -6,6 +6,7 @@ import {
   errorNoEncontrado,
 } from '../../compartido/dominio/errores.js';
 import type { PoliticaDeTiempo, Reloj } from '../../compartido/dominio/reloj.js';
+import type { DatosDisponibilidad } from '../../disponibilidad/aplicacion/casos-de-uso.js';
 import type { DisponibilidadRepositorio } from '../../disponibilidad/aplicacion/puertos.js';
 import {
   cancelar,
@@ -49,12 +50,20 @@ export class SolicitarSesion {
     private readonly registro: Registro,
   ) {}
 
-  async ejecutar(actor: Actor, disponibilidadId: string): Promise<Sesion> {
+  async ejecutar(actor: Actor, disponibilidadId: string, horarioOfrecido?: DatosDisponibilidad): Promise<Sesion> {
     exigirRol(actor, 'ESTUDIANTE');
     const medicion = performance.now();
     const disponibilidad = await this.disponibilidades.buscarPorId(disponibilidadId);
     if (!disponibilidad) {
       throw errorNoEncontrado('DISPONIBILIDAD_NO_ENCONTRADA', 'El horario solicitado no existe.');
+    }
+    if (
+      horarioOfrecido &&
+      (horarioOfrecido.asignaturaId !== disponibilidad.asignaturaId ||
+        horarioOfrecido.inicio.getTime() !== disponibilidad.inicio.getTime() ||
+        horarioOfrecido.fin.getTime() !== disponibilidad.fin.getTime())
+    ) {
+      throw errorDeConflicto('HORARIO_NO_DISPONIBLE', 'El horario fue modificado. Actualiza la búsqueda.');
     }
     validarSolicitud(disponibilidad.inicio, this.reloj.ahora(), this.politica);
     if (await this.sesiones.hayActivaEnDisponibilidad(disponibilidadId)) {

@@ -43,6 +43,8 @@ export interface FiltroBusqueda {
 /** Puerto de salida: persistencia de la disponibilidad de los tutores. */
 export abstract class DisponibilidadRepositorio {
   abstract crear(datos: NuevaDisponibilidad): Promise<Disponibilidad>;
+  abstract actualizar(id: string, datos: NuevaDisponibilidad): Promise<Disponibilidad>;
+  abstract retirar(id: string, tutorId: string, fecha: Date): Promise<void>;
   abstract buscarPorId(id: string): Promise<Disponibilidad | null>;
   abstract buscarSolapadas(tutorId: string, inicio: Date, fin: Date): Promise<Disponibilidad[]>;
   abstract listarPorTutor(tutorId: string): Promise<DisponibilidadDetalle[]>;

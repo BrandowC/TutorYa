@@ -10,11 +10,14 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { JwtAuthGuard, Roles, RolesGuard, UsuarioActual } from '../../acceso/infraestructura/guards.js';
 import type { Actor, Rol } from '../../acceso/dominio/usuario.js';
 import { errorDeConflicto } from '../../compartido/dominio/errores.js';
+import { CrearDisponibilidadDto } from '../../disponibilidad/infraestructura/disponibilidad.infra.js';
 import { Prisma } from '../../generated/prisma/client.js';
+import { bloquearHorariosDelTutor } from '../../prisma/bloquear-horarios.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   CalificarSesion,
@@ -94,7 +97,23 @@ export class SesionPrismaRepositorio extends SesionRepositorio {
 
   async crear(datos: NuevaSesion): Promise<Sesion> {
     try {
-      return aSesion(await this.prisma.sesion.create({ data: datos }));
+      return await this.prisma.$transaction(async (tx) => {
+        await bloquearHorariosDelTutor(tx, datos.tutorId);
+        const vigente = await tx.disponibilidad.findFirst({
+          where: {
+            id: datos.disponibilidadId,
+            tutorId: datos.tutorId,
+            asignaturaId: datos.asignaturaId,
+            inicio: datos.inicio,
+            fin: datos.fin,
+            retiradaEn: null,
+          },
+        });
+        if (!vigente) {
+          throw errorDeConflicto('HORARIO_NO_DISPONIBLE', 'El horario fue modificado o retirado. Actualiza la búsqueda.');
+        }
+        return aSesion(await tx.sesion.create({ data: datos }));
+      });
     } catch (error) {
       // El índice único parcial protege contra dos solicitudes simultáneas al mismo horario.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -154,7 +173,7 @@ export class SesionPrismaRepositorio extends SesionRepositorio {
     const indicadorEspecifico =
       rol === 'TUTOR'
         ? await this.prisma.disponibilidad.count({
-            where: { tutorId: usuarioId, sesiones: { none: { estado: { in: [...ESTADOS_ACTIVOS] } } } },
+            where: { tutorId: usuarioId, retiradaEn: null, sesiones: { none: { estado: { in: [...ESTADOS_ACTIVOS] } } } },
           })
         : await this.prisma.sesion.count({
             where: { estudianteId: usuarioId, estado: 'REALIZADA', calificacion: null },
@@ -193,6 +212,12 @@ export class SesionPrismaRepositorio extends SesionRepositorio {
 export class SolicitarSesionDto {
   @IsUUID(undefined, { message: 'El horario seleccionado no es válido.' })
   disponibilidadId!: string;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => CrearDisponibilidadDto)
+  horarioOfrecido?: CrearDisponibilidadDto;
 }
 
 export class CancelarSesionDto {
@@ -241,7 +266,7 @@ export class SesionesController {
   @Post()
   @Roles('ESTUDIANTE')
   solicitarSesion(@UsuarioActual() actor: Actor, @Body() dto: SolicitarSesionDto) {
-    return this.solicitar.ejecutar(actor, dto.disponibilidadId);
+    return this.solicitar.ejecutar(actor, dto.disponibilidadId, dto.horarioOfrecido);
   }
 
   @Get('mias')
